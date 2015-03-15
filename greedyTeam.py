@@ -22,7 +22,7 @@ import game
 #################
 
 def createTeam(firstIndex, secondIndex, isRed,
-               first = 'DummyAgent', second = 'DummyAgent'):
+               first = 'GreedyAgent', second = 'GreedyAgent'):
   """
   This function should return a list of two agents that will form the
   team, initialized using firstIndex and secondIndex as their agent
@@ -46,48 +46,81 @@ def createTeam(firstIndex, secondIndex, isRed,
 ##########
 
 class GreedyAgent(CaptureAgent):
-  """
-  A Dummy agent to serve as an example of the necessary agent structure.
-  You should look at baselineTeam.py for more details about how to
-  create an agent as this is the bare minimum.
-  """
-
-  def registerInitialState(self, gameState):
     """
-    This method handles the initial setup of the
-    agent to populate useful fields (such as what team
-    we're on).
-
-    A distanceCalculator instance caches the maze distances
-    between each pair of positions, so your agents can use:
-    self.distancer.getDistance(p1, p2)
-
-    IMPORTANT: This method may run for at most 15 seconds.
+    A Dummy agent to serve as an example of the necessary agent structure.
+    You should look at baselineTeam.py for more details about how to
+    create an agent as this is the bare minimum.
     """
-
-    '''
-    Make sure you do not delete the following line. If you would like to
-    use Manhattan distances instead of maze distances in order to save
-    on initialization time, please take a look at
-    CaptureAgent.registerInitialState in captureAgents.py.
-    '''
-
-    self.start = gameState.getAgentPosition(self.index)
-    CaptureAgent.registerInitialState(self, gameState)
-    '''
-    Your initialization code goes here, if you need any.
-    '''
+    def __init__( self, index ):
+      self.observationHistory = []
+      self.index = index
+      self.explored=[]
 
 
-  def chooseAction(self, gameState):
-    """
-    Picks among actions randomly.
-    """
-    actions = gameState.getLegalActions(self.index)
+    def registerInitialState(self, gameState):
+      self.start = gameState.getAgentPosition(self.index)
+      CaptureAgent.registerInitialState(self, gameState)
 
-    '''
-    You should change this in your own agent.
-    '''
+    def chooseAction(self, gameState):
+      """
+      Picks among actions randomly.
+      """
+      actions = gameState.getLegalActions(self.index)
 
-    return random.choice(actions)
+      bestaction=None
+      bestval=float("-inf")
+      for action in actions:
+        temp=self.evaluate(gameState,action)
+        if bestaction is None:
+          bestaction=action
+          bestval=temp
+        elif bestval<temp:
+          bestaction=action
+          bestval=temp
+      if self.getSuccessor(gameState,bestaction) not in self.explored:
+        self.explored.append(self.getSuccessor(gameState,bestaction))
+      return bestaction
 
+    def evaluate(self,state,action):
+      successor = self.getSuccessor(state, action)
+      myState = successor.getAgentState(self.index)
+      myPos = myState.getPosition()
+      total=0
+      if not successor in self.explored:
+        total+=20
+
+      foodList = self.getFood(successor).asList()# Compute distance to the nearest food
+      if myState.isPacman:
+        if len(self.getFood(state).asList()) > len(foodList):
+          total+=10
+        if len(foodList) > 0: # This should always be True,  but better safe than sorry
+          minDistance = min([self.getMazeDistance(myPos, food) for food in foodList])
+          total+=-1*minDistance
+      else:
+        prev= [a for a in [state.getAgentState(i) for i in self.getOpponents(state)] if a.isPacman and a.getPosition() != None]
+        enemies = [successor.getAgentState(i) for i in self.getOpponents(successor)]
+        invaders = [a for a in enemies if a.isPacman and a.getPosition() != None]
+        if len(prev) > len(invaders):
+          total+=10
+        if len(invaders) > 0:
+          dists = [self.getMazeDistance(myPos, a.getPosition()) for a in invaders]
+          minDistance = min(dists)
+          total+=-1*minDistance
+
+        elif len(foodList) > 0: # This should always be True,  but better safe than sorry
+          minDistance = min([self.getMazeDistance(myPos, food) for food in foodList])
+          total+=-1*minDistance
+      print "Action:"+action
+      print total
+      return total
+    def getSuccessor(self, gameState, action):
+      """
+      Finds the next successor which is a grid position (location tuple).
+      """
+      successor = gameState.generateSuccessor(self.index, action)
+      pos = successor.getAgentState(self.index).getPosition()
+      if pos != util.nearestPoint(pos):
+        # Only half a grid position was covered
+        return successor.generateSuccessor(self.index, action)
+      else:
+        return successor
