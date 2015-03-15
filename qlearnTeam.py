@@ -59,6 +59,7 @@ class QLearningAgent(CaptureAgent):
       self.discount=0.8
       self.features={}
       self.weights ={}
+      self.food=0
       self.timer=util.Counter()
       self.timer['total']=0
 
@@ -182,6 +183,8 @@ class QLearningAgent(CaptureAgent):
         # Computes whether we're on defense (1) or offense (0)
         features['onDefense'] = 1
         if myState.isPacman: features['onDefense'] = 0
+        if self.getFood(gameState) > self.getFood(successor):
+          features['hasFood']=1
 
         # Computes distance to invaders we can see
 
@@ -223,19 +226,16 @@ class QLearningAgent(CaptureAgent):
           # Compute distance to the nearest food
           if len(foodList) > 0: # This should always be True,  but better safe than sorry
             myPos = successor.getAgentState(self.index).getPosition()
-            minDistance = float(inf)
+            minDistance = float("inf")
             min([self.getMazeDistance(myPos, food) for food in foodList])
             for food in foodList:
               if (minDistance > self.getMazeDistance(myPos,food)):
-                
+                minDistance=self.getMazeDistance(myPos,food)
               if myPos==food:
                 features['totalFood']=features['totalFood']+1
             if (minDistance==0):
               features['totalFood']=features['totalFood']+1
             features['distanceToFood'] = minDistance
-
-
-
         self.features[(gameState,action)]=features
 
       return self.features[(gameState,action)]
@@ -257,10 +257,11 @@ class QLearningAgent(CaptureAgent):
         else:
           weights['totalFood']=20
           weights['nearestPellet']=10
-          weights['onOffense']=150
+          weights['onOffense']=100
           weights['successorScore']=0
           weights['distanceToFood']= -1
           weights['ghostDistance']=10
+          weights['hasFood']=100
         self.weights[(state,action)]=weights
       return self.weights[(state,action)]
 

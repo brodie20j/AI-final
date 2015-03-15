@@ -55,6 +55,7 @@ class GreedyAgent(CaptureAgent):
       self.observationHistory = []
       self.index = index
       self.explored=[]
+      self.food=0
 
 
     def registerInitialState(self, gameState):
@@ -62,10 +63,9 @@ class GreedyAgent(CaptureAgent):
       CaptureAgent.registerInitialState(self, gameState)
 
     def chooseAction(self, gameState):
-      """
-      Picks among actions randomly.
-      """
       actions = gameState.getLegalActions(self.index)
+      print actions
+      if 'Stop' in actions: actions.remove('Stop')
 
       bestaction=None
       bestval=float("-inf")
@@ -82,36 +82,49 @@ class GreedyAgent(CaptureAgent):
       return bestaction
 
     def evaluate(self,state,action):
+      prevGhost=[a for a in [state.getAgentState(i) for i in self.getOpponents(state)] if not a.isPacman and a.getPosition() != None]
+      print prevGhost
+      prevFood=self.getFood(state).asList()
       successor = self.getSuccessor(state, action)
       myState = successor.getAgentState(self.index)
       myPos = myState.getPosition()
       total=0
       if not successor in self.explored:
         total+=20
+      if myPos == self.start:
+        self.food=0
+        total-=100
 
       foodList = self.getFood(successor).asList()# Compute distance to the nearest food
-      if myState.isPacman:
-        if len(self.getFood(state).asList()) > len(foodList):
+      if myState.isPacman:#If we are on offense...
+        for ghost in prevGhost:
+          if self.getMazeDistance(myPos,ghost.getPosition())==0:
+            total+=10
+        if len(prevFood) > len(foodList):
           total+=10
+          self.food+=1
         if len(foodList) > 0: # This should always be True,  but better safe than sorry
           minDistance = min([self.getMazeDistance(myPos, food) for food in foodList])
           total+=-1*minDistance
-      else:
+        if self.food > 3:
+          minDistance = min([self.getMazeDistance(myPos, food) for food in self.getFoodYouAreDefending(successor).asList()])
+          total+=-20*minDistance
+      else:#if we are on defense
+        if self.getScore(state) < self.getScore(successor):
+          total+=20
         prev= [a for a in [state.getAgentState(i) for i in self.getOpponents(state)] if a.isPacman and a.getPosition() != None]
         enemies = [successor.getAgentState(i) for i in self.getOpponents(successor)]
         invaders = [a for a in enemies if a.isPacman and a.getPosition() != None]
         if len(prev) > len(invaders):
-          total+=10
+          total+=50
         if len(invaders) > 0:
           dists = [self.getMazeDistance(myPos, a.getPosition()) for a in invaders]
           minDistance = min(dists)
           total+=-1*minDistance
-
         elif len(foodList) > 0: # This should always be True,  but better safe than sorry
           minDistance = min([self.getMazeDistance(myPos, food) for food in foodList])
           total+=-1*minDistance
-      print "Action:"+action
-      print total
+
       return total
     def getSuccessor(self, gameState, action):
       """
