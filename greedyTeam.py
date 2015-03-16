@@ -64,9 +64,7 @@ class GreedyAgent(CaptureAgent):
 
     def chooseAction(self, gameState):
       actions = gameState.getLegalActions(self.index)
-      print actions
       if 'Stop' in actions: actions.remove('Stop')
-
       bestaction=None
       bestval=float("-inf")
       for action in actions:
@@ -83,7 +81,6 @@ class GreedyAgent(CaptureAgent):
 
     def evaluate(self,state,action):
       prevGhost=[a for a in [state.getAgentState(i) for i in self.getOpponents(state)] if not a.isPacman and a.getPosition() != None]
-      print prevGhost
       prevFood=self.getFood(state).asList()
       successor = self.getSuccessor(state, action)
       myState = successor.getAgentState(self.index)
@@ -98,6 +95,7 @@ class GreedyAgent(CaptureAgent):
       foodList = self.getFood(successor).asList()# Compute distance to the nearest food
       if myState.isPacman:#If we are on offense...
         for ghost in prevGhost:
+
           if self.getMazeDistance(myPos,ghost.getPosition())==0:
             total+=10
         if len(prevFood) > len(foodList):
@@ -107,7 +105,8 @@ class GreedyAgent(CaptureAgent):
           minDistance = min([self.getMazeDistance(myPos, food) for food in foodList])
           total+=-1*minDistance
         if self.food > 3:
-          minDistance = min([self.getMazeDistance(myPos, food) for food in self.getFoodYouAreDefending(successor).asList()])
+          if (len(self.getFoodYouAreDefending(successor).asList()) > 0):
+            minDistance = min([self.getMazeDistance(myPos, food) for food in self.getFoodYouAreDefending(successor).asList()])
           total+=-20*minDistance
       else:#if we are on defense
         if self.getScore(state) < self.getScore(successor):
