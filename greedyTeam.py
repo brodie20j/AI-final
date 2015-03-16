@@ -1,4 +1,5 @@
-# greedy.py
+# greedyTeam.py
+# Created By Jonathan Brodie and John Blake
 # ---------
 # Licensing Information:  You are free to use or extend these projects for
 # educational purposes provided that (1) you do not distribute or publish
@@ -64,6 +65,8 @@ class GreedyAgent(CaptureAgent):
 
     def chooseAction(self, gameState):
       actions = gameState.getLegalActions(self.index)
+
+      #A greedy agent NEVER stops
       if 'Stop' in actions: actions.remove('Stop')
       bestaction=None
       bestval=float("-inf")
@@ -80,6 +83,9 @@ class GreedyAgent(CaptureAgent):
       return bestaction
 
     def evaluate(self,state,action):
+      """
+      Evaluates the state based on the features of the state
+      """
       prevGhost=[a for a in [state.getAgentState(i) for i in self.getOpponents(state)] if not a.isPacman and a.getPosition() != None]
       prevFood=self.getFood(state).asList()
       successor = self.getSuccessor(state, action)
@@ -88,16 +94,16 @@ class GreedyAgent(CaptureAgent):
       total=0
       if not successor in self.explored:
         total+=20
+
+      #if the successor state is start, don't take this action
       if myPos == self.start:
         self.food=0
         total-=100
 
       foodList = self.getFood(successor).asList()# Compute distance to the nearest food
-      if myState.isPacman:#If we are on offense...
-        for ghost in prevGhost:
 
-          if self.getMazeDistance(myPos,ghost.getPosition())==0:
-            total+=10
+      if myState.isPacman:#If we are on offense...
+
         if len(prevFood) > len(foodList):
           total+=10
           self.food+=1
