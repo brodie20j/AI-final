@@ -24,3 +24,5 @@ greedyTeam -> greedyTeam.py
 qlearnTeam -> qlearnTeam.py
 
 The provided "Base line team" can be ran by "baselineTeam"
+
+Thanks to UC Berkeley for the API from here https://inst.eecs.berkeley.edu/~cs188/sp09/projects/contest/contest.html.
